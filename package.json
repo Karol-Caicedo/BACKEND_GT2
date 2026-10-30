@@ -1,0 +1,86 @@
+{
+  "name": "intereses-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "NODE_ENV=production node dist/main",
+    "seed": "ts-node src/seed.ts",
+    "seed:prod": "node dist/seed.js --prod",
+    "password:migration-status": "node scripts/password-migration-status.js",
+    "passwords:reset": "ts-node src/scripts/reset-passwords.ts",
+    "passwords:reset:prod": "node dist/scripts/reset-passwords.js",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/data-source.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
+    "migration:run:guarded": "ts-node src/migrate-guarded.ts",
+    "migration:run:guarded:prod": "node dist/migrate-guarded.js",
+    "test": "jest",
+    "test:cov": "jest --coverage"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/schedule": "^6.0.0",
+    "@nestjs/swagger": "^11.0.0",
+    "@nestjs/throttler": "^6.0.0",
+    "@nestjs/typeorm": "^11.0.0",
+    "argon2": "^0.44.0",
+    "bcryptjs": "^2.4.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "helmet": "^8.0.0",
+    "nodemailer": "^10.2.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-jwt": "^4.0.1",
+    "passport-oauth2": "^1.8.0",
+    "pg": "^8.12.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.0.0",
+    "@types/passport-google-oauth20": "^2.0.14",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/passport-oauth2": "^1.8.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "testEnvironment": "node",
+    "setupFiles": [
+      "<rootDir>/test/setup.ts"
+    ]
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "overrides": {
+    "multer": "^2.5.0",
+    "js-yaml": "^5.5.0"
+  }
+}
