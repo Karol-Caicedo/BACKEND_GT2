@@ -1,13 +1,12 @@
 import { ConfigService } from '@nestjs/config';
 
 /**
- * La aplicación no ejecuta migraciones al inicializar TypeORM en producción.
- * El comando de inicio de Railway ejecuta antes el runner protegido y confirma
- * explícitamente la operación.
+ * Las migraciones pendientes se aplican al inicializar TypeORM en cualquier
+ * entorno, incluido producción, para que el despliegue no dependa de un comando
+ * de arranque externo. `DB_MIGRATIONS_RUN=false` desactiva la ejecución
+ * automática (por ejemplo, para aplicar migraciones de forma manual y revisada).
  */
 export function migracionesAutomaticasHabilitadas(config: ConfigService): boolean {
-  const entorno = (config.get<string>('NODE_ENV') || '').trim().toLowerCase();
-  if (entorno === 'production') return false;
   return (config.get<string>('DB_MIGRATIONS_RUN') || 'true').trim().toLowerCase() !== 'false';
 }
 

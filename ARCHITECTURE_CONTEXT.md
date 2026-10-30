@@ -131,7 +131,7 @@ Invariantes: 1–5 temas en modo selección; puntajes 1–5; máximo 4 asignatur
 
 9. **Pruebas y calidad.** Jest con `rootDir: src`, `*.spec.ts` y `ts-jest`; hay 40 specs, incluidas unitarias de auth, acceso, reglas, DTOs y servicios, más integración HTTP/DB en `src/test/`. La integración crea el esquema con `synchronize()` en `intereses_db_test` y trunca datos; `TEST_DB_NAME` debe terminar en `_test`. No hay lint, formato, cobertura obligatoria ni CI. El 2026-10-28 se ejecutaron build y pruebas: **build OK**; unitarias **333/345** (12 fallos, 6 suites rojas); integración real **22/24** (2 fallos). Fallos deterministas: `railway.json`/`migrate:prod` ausentes, specs que leen `karol1/frontend/src` inexistente, constructor de asignaturas desactualizado, expectativas de `grupos` y `semestreAlResponder` desalineadas. Cobertura no generó resumen por suites rojas. Detalle en [`TEST_REPORT.md`](../TEST_REPORT.md).
 
-10. **Comandos y entorno.** La fuente de verdad es [`AGENTS.md`](./AGENTS.md) → `Commands`. Resumen: `npm ci`; `npm run start:dev`; `npm run build` + `npm run start:prod`; `npm test`; `docker compose up -d postgres`; `npm run seed`; migraciones con `migration:generate`, `migration:run` y en producción `migration:run:guarded`/`migrate:prod` + `MIGRATE_CONFIRM=YES` (el arranque del contenedor y `railway.json` ya lo aplican).
+10. **Comandos y entorno.** La fuente de verdad es [`AGENTS.md`](./AGENTS.md) → `Commands`. Resumen: `npm ci`; `npm run start:dev`; `npm run build` + `npm run start:prod`; `npm test`; `docker compose up -d postgres`; `npm run seed`; migraciones con `migration:generate`, `migration:run` y, para ejecución manual en producción, `migration:run:guarded`/`migrate:prod` + `MIGRATE_CONFIRM=YES` (el arranque del contenedor, `railway.json` y `migrationsRun` ya las aplican automáticamente).
 
 | Grupo | Variables (sin valores) |
 |---|---|
@@ -144,7 +144,7 @@ Invariantes: 1–5 temas en modo selección; puntajes 1–5; máximo 4 asignatur
 
 El arranque falla si `JWT_SECRET` mide menos de 32 caracteres o es un valor de ejemplo, o si las claves de login no son RSA PKCS#8 de al menos 3072 bits. `ConfigModule` busca `../.env` y luego `.env`; no hay `.env.example`. No se documentan ni copian valores reales.
 
-11. **Despliegue.** `Dockerfile` multi-stage Node 22: `npm ci`, build, luego runtime con dependencias de producción. El `CMD` ejecuta `MIGRATE_CONFIRM=YES npm run migrate:prod && npm run start:prod`, de modo que las migraciones pendientes se aplican antes de iniciar Nest. `railway.json` fija ese mismo `startCommand`, health check en `/api/health` y reinicio en fallo. `docker-compose.yml` levanta PostgreSQL 16 con healthcheck y el backend, con volúmenes `pgdata` y `uploads`. En producción `migrationsRun` sigue desactivado; el runner protegido exige `MIGRATE_CONFIRM=YES`, que aporta el comando de arranque versionado. No hay pipeline ni backups automatizados ni health check de imagen más allá del de Railway. Orden: migraciones → backend → frontend. Para revertir, desplegar la imagen anterior y aplicar el plan de datos correspondiente.
+11. **Despliegue.** `Dockerfile` multi-stage Node 22: `npm ci`, build, luego runtime con dependencias de producción. El `CMD` ejecuta `MIGRATE_CONFIRM=YES npm run migrate:prod && npm run start:prod` y `railway.json` fija ese mismo `startCommand`, health check en `/api/health` y reinicio en fallo. Además, `TypeOrmModule` aplica las migraciones pendientes al inicializar en cualquier entorno (`migrationsRun`), por lo que el esquema se actualiza aunque el comando de arranque del proveedor no ejecute el runner; `DB_MIGRATIONS_RUN=false` lo desactiva. `docker-compose.yml` levanta PostgreSQL 16 con healthcheck y el backend, con volúmenes `pgdata` y `uploads`. No hay pipeline ni backups automatizados ni health check de imagen más allá del de Railway. Orden: migraciones → backend → frontend. Para revertir, desplegar la imagen anterior y aplicar el plan de datos correspondiente.
 
 12. **Relación con otros repos.**
 
@@ -189,7 +189,7 @@ Brechas de skills: hay skills de backend, bases de datos, seguridad, pruebas, De
 | `.env` fuera de Git; no registrar DB/JWT/SSO/SMTP/login-crypto | `Config and startup`, línea 18 | Vigente |
 | `JWT_SECRET` ≥ 32 y claves RSA PKCS#8 ≥ 3072 bits obligatorias | Línea 19 | Vigente |
 | Prefijo `api`, Helmet, CORS, Swagger y `/api/health` | Línea 20 | Vigente |
-| Migraciones automáticas desactivadas en producción | Línea 22 | Vigente |
+| Migraciones automáticas al arrancar, salvo `DB_MIGRATIONS_RUN=false` | Línea 22 | Vigente |
 | Toda ruta debe declarar `@Public()` o `@Auth(...)` | Línea 26 | Vigente |
 | Login cifrado con challenge de un solo uso y 2 minutos | Línea 27 | Vigente |
 | Argon2id, bcrypt legado y rehash; nunca loguear cuerpos | Línea 28 | Vigente |

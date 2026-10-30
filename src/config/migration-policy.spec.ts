@@ -14,8 +14,9 @@ describe('C-04 política de migraciones', () => {
   test.each([
     [{ NODE_ENV: 'development' }, true],
     [{ NODE_ENV: 'test' }, true],
-    [{ NODE_ENV: 'production' }, false],
-    [{ NODE_ENV: 'production', DB_MIGRATIONS_RUN: 'true' }, false],
+    [{ NODE_ENV: 'production' }, true],
+    [{ NODE_ENV: 'production', DB_MIGRATIONS_RUN: 'true' }, true],
+    [{ NODE_ENV: 'production', DB_MIGRATIONS_RUN: 'false' }, false],
     [{ NODE_ENV: 'development', DB_MIGRATIONS_RUN: 'false' }, false],
   ])('migraciones automáticas con %j => %s', (env, esperado) => {
     expect(migracionesAutomaticasHabilitadas(new ConfigService(env))).toBe(esperado);
@@ -46,7 +47,7 @@ describe('C-04 política de migraciones', () => {
 
   test('Railway ejecuta el runner protegido antes de iniciar la app', () => {
     const packageJson = JSON.parse(readFileSync(join(BACKEND_SRC, '..', 'package.json'), 'utf8'));
-    const railway = JSON.parse(readFileSync(join(BACKEND_SRC, '..', '..', 'railway.json'), 'utf8'));
+    const railway = JSON.parse(readFileSync(join(BACKEND_SRC, '..', 'railway.json'), 'utf8'));
     expect(packageJson.scripts['migration:run:guarded']).toContain('migrate-guarded');
     expect(packageJson.scripts.start).not.toContain('migrate');
     expect(packageJson.scripts['start:prod']).toContain('NODE_ENV=production');

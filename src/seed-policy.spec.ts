@@ -30,7 +30,7 @@ describe('C-03 política de seed en producción', () => {
   });
 
   test('Railway no ejecuta el seed automáticamente en cada despliegue', () => {
-    const railway = JSON.parse(readFileSync(join(__dirname, '..', '..', 'railway.json'), 'utf8'));
+    const railway = JSON.parse(readFileSync(join(__dirname, '..', 'railway.json'), 'utf8'));
     expect(railway.deploy.startCommand).not.toMatch(/seed/);
     expect(railway.deploy.startCommand).toContain('start:prod');
   });

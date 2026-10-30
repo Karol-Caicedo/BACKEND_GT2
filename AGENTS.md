@@ -11,7 +11,7 @@ SIGICE backend: NestJS 11 + PostgreSQL 16 + TypeORM API for the SIGICE frontend 
 - Single test: `npm test -- auth.service.spec` (Jest path pattern). Skip the DB suite: `npm test -- --testPathIgnorePatterns=integracion`.
 - Local DB: `docker compose up -d postgres` (reads `.env`; DB on `localhost:5432`). `docker compose up -d --build` runs the API too.
 - `npm run seed` / `npm run seed:prod` — create admin, topics, subjects, and demo data (`seed:prod` needs a prior build). In production strong `ADMIN_PASSWORD`/`ESTUDIANTE_PASSWORD` are mandatory and the demo student is skipped unless `SEED_DEMO_STUDENT=true`.
-- Migrations: `npm run migration:generate -- src/migrations/<Nombre>` then `npm run migration:run`; production uses `npm run migration:run:guarded` with `MIGRATE_CONFIRM=YES`.
+- Migrations: `npm run migration:generate -- src/migrations/<Nombre>` then `npm run migration:run`; production may also use `npm run migration:run:guarded` with `MIGRATE_CONFIRM=YES`. TypeORM applies pending migrations on application start in every environment unless `DB_MIGRATIONS_RUN=false`.
 - Node >= 20 required (Docker uses 22).
 
 ## Config and startup
@@ -20,7 +20,7 @@ SIGICE backend: NestJS 11 + PostgreSQL 16 + TypeORM API for the SIGICE frontend 
 - Boot fails unless `JWT_SECRET` is >= 32 chars and not a sample value, and `LOGIN_CRYPTO_ACTIVE_KEY_ID` + `LOGIN_CRYPTO_KEYS_JSON` contain a valid PKCS#8 RSA key >= 3072 bits.
 - `main.ts` sets the global prefix `api`, helmet, CORS from `FRONTEND_URL` (comma-separated) plus `localhost:4200`, Swagger at `/api/docs` (disable with `ENABLE_SWAGGER=false`), and health at `/api/health`.
 - `ConfigModule` looks for `../.env` then `.env`; `data-source.ts` loads both for CLI/seed commands.
-- In production `migrationsRun` is disabled (`NODE_ENV=production`); in dev it runs automatically unless `DB_MIGRATIONS_RUN=false`.
+- `migrationsRun` applies pending migrations at startup in every environment (including production); set `DB_MIGRATIONS_RUN=false` to disable it and run them manually.
 
 ## API, auth and access
 
@@ -45,7 +45,7 @@ SIGICE backend: NestJS 11 + PostgreSQL 16 + TypeORM API for the SIGICE frontend 
 
 ## Gotchas
 
-- Never run `migration:run` against production without `migration:run:guarded` + `MIGRATE_CONFIRM=YES`; production also disables auto-migrations.
+- Never run `migration:run` manually against production without `migration:run:guarded` + `MIGRATE_CONFIRM=YES`; the app already applies pending migrations on startup unless `DB_MIGRATIONS_RUN=false`.
 - `tsconfig` has `strictNullChecks: false` and excludes specs from the build; don't assume strict TS.
 - `.gitignore` covers `node_modules/`, `dist/`, `.env`, `coverage/`, and `uploads/*` (keeping `.gitkeep`).
 - No lint or format script exists; `npm run build` and `npm test` are the checks.
