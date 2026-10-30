@@ -101,7 +101,10 @@ export async function ejecutarSeed(ds: DataSource = AppDataSource): Promise<void
     console.log('Admin ya existe.');
   }
 
-  const crearDemo = debeCrearEstudianteDemo(produccion, process.env.SEED_DEMO_STUDENT);
+  const crearDemo = debeCrearEstudianteDemo(
+    produccion,
+    process.env.SEED_DEMO_STUDENT ?? (process.env.ESTUDIANTE_PASSWORD ? 'true' : undefined),
+  );
   if (crearDemo) {
     const estEmail = (process.env.ESTUDIANTE_EMAIL || 'estudiante@unipacifico.edu.co').toLowerCase();
     const estPass = produccion

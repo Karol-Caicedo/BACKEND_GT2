@@ -25,10 +25,11 @@ async function asegurarDatosIniciales(app: NestExpressApplication): Promise<void
   if (!produccion) return;
 
   const ds = app.get(DataSource);
-  const totalUsuarios = await ds.getRepository(User).count();
-  if (totalUsuarios > 0) {
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@unipacifico.edu.co').toLowerCase();
+  const existeAdmin = await ds.getRepository(User).findOne({ where: { correo: adminEmail } });
+  if (existeAdmin) {
     // eslint-disable-next-line no-console
-    console.log(`[seed] Usuarios existentes: ${totalUsuarios}. No se ejecuta el seed inicial.`);
+    console.log(`[seed] Admin (${adminEmail}) ya existe. No se ejecuta el seed inicial.`);
     return;
   }
   if (!(process.env.ADMIN_PASSWORD || '').trim()) {

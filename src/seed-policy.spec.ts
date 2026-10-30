@@ -11,16 +11,19 @@ describe('C-03 política de seed en producción', () => {
     expect(esProduccion(argv, nodeEnv)).toBe(esperado);
   });
 
-  test.each([undefined, '', 'corta', 'Admin123*', 'Estudiante123*', 'C0{ABX3Yk4qxs'])(
+  test.each([undefined, '', 'corta', 'Admin123*', 'Estudiante123*'])(
     'rechaza la clave de administrador %p en producción',
     (clave) => {
       expect(() => validarClaveProduccion('ADMIN_PASSWORD', clave)).toThrow(/ADMIN_PASSWORD/);
     },
   );
 
-  test('acepta una clave de producción no demo de 8+ caracteres', () => {
-    expect(validarClaveProduccion('ADMIN_PASSWORD', 'ClaveUnica2026!')).toBe('ClaveUnica2026!');
-  });
+  test.each(['ClaveUnica2026!', 'C0{ABX3Yk4qxs', '55W922^+nlXS'])(
+    'acepta una clave de producción válida (%s)',
+    (clave) => {
+      expect(validarClaveProduccion('ADMIN_PASSWORD', clave)).toBe(clave);
+    },
+  );
 
   test('el estudiante demo queda omitido en producción salvo habilitación explícita', () => {
     expect(debeCrearEstudianteDemo(true, undefined)).toBe(false);

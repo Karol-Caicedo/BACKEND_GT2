@@ -1,4 +1,4 @@
-export const CLAVES_DEMO = new Set(['Admin123*', 'Estudiante123*', 'C0{ABX3Yk4qxs']);
+export const CLAVES_DEMO = new Set(['Admin123*', 'Estudiante123*']);
 
 export function esProduccion(
   argv: string[] = process.argv,
