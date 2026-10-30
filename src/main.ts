@@ -7,7 +7,10 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import type { NextFunction, Request, Response } from 'express';
+import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
+import { User } from './modules/users/user.entity';
+import { ejecutarSeed } from './seed';
 import { AccessLogService } from './common/access-log.service';
 import { AccessPolicyService } from './common/access-policy.service';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
@@ -16,6 +19,33 @@ import { corsOriginGuard } from './common/cors-origin.middleware';
 import { cuerpoError } from './common/http-error';
 import { tuberíaValidacionHttp } from './common/validacion-http';
 import { apiNoStoreMiddleware } from './common/api-no-store.middleware';
+
+async function asegurarDatosIniciales(app: NestExpressApplication): Promise<void> {
+  const produccion = (process.env.NODE_ENV || '').trim().toLowerCase() === 'production';
+  if (!produccion) return;
+
+  const ds = app.get(DataSource);
+  const totalUsuarios = await ds.getRepository(User).count();
+  if (totalUsuarios > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`[seed] Usuarios existentes: ${totalUsuarios}. No se ejecuta el seed inicial.`);
+    return;
+  }
+  if (!(process.env.ADMIN_PASSWORD || '').trim()) {
+    // eslint-disable-next-line no-console
+    console.warn('[seed] Base de datos sin usuarios y ADMIN_PASSWORD no configurado. Define ADMIN_PASSWORD y redespliega.');
+    return;
+  }
+
+  // eslint-disable-next-line no-console
+  console.log('[seed] Base de datos sin usuarios: ejecutando seed inicial...');
+  try {
+    await ejecutarSeed(ds);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('[seed] No se pudo ejecutar el seed inicial:', error instanceof Error ? error.message : error);
+  }
+}
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -102,6 +132,8 @@ async function bootstrap() {
     // eslint-disable-next-line no-console
     console.log(`Sirviendo frontend desde ${webDir}`);
   }
+
+  await asegurarDatosIniciales(app);
 
   const port = Number(config.get('PORT', 3000));
   await app.listen(port);

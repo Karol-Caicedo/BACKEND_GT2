@@ -72,7 +72,7 @@ flowchart LR
 | Migración | Clase explícita en `src/migrations/` e importada en `data-source.ts` | `src/migrations/1700000000012-grupos-asignaturas.ts` |
 | Error de negocio | `BadRequestException`, `UnauthorizedException`, `NotFoundException`; el filtro global normaliza | `src/common/all-exceptions.filter.ts` |
 | Prueba | Jest junto al archivo (`*.spec.ts`); integración en `src/test/` | `src/modules/auth/auth.service.spec.ts` |
-| Seed | Idempotente; valida claves en producción; no ejecuta migraciones | `src/seed.ts`, `src/seed-policy.ts` |
+| Seed | Idempotente; valida claves en producción; no ejecuta migraciones; en producción se ejecuta al arrancar si no hay usuarios y `ADMIN_PASSWORD` está definido | `src/seed.ts`, `src/seed-policy.ts`, `src/main.ts` |
 
 El código y los mensajes de usuario están en español. `tsconfig` usa `strictNullChecks: false`; no asumir tipado estricto. No hay lint ni formateador; no reformatear archivos ajenos.
 
@@ -144,7 +144,7 @@ Invariantes: 1–5 temas en modo selección; puntajes 1–5; máximo 4 asignatur
 
 El arranque falla si `JWT_SECRET` mide menos de 32 caracteres o es un valor de ejemplo, o si las claves de login no son RSA PKCS#8 de al menos 3072 bits. `ConfigModule` busca `../.env` y luego `.env`; no hay `.env.example`. No se documentan ni copian valores reales.
 
-11. **Despliegue.** `Dockerfile` multi-stage Node 22: `npm ci`, build, luego runtime con dependencias de producción. El `CMD` ejecuta `MIGRATE_CONFIRM=YES npm run migrate:prod && npm run start:prod` y `railway.json` fija ese mismo `startCommand`, health check en `/api/health` y reinicio en fallo. Además, `TypeOrmModule` aplica las migraciones pendientes al inicializar en cualquier entorno (`migrationsRun`), por lo que el esquema se actualiza aunque el comando de arranque del proveedor no ejecute el runner; `DB_MIGRATIONS_RUN=false` lo desactiva. `docker-compose.yml` levanta PostgreSQL 16 con healthcheck y el backend, con volúmenes `pgdata` y `uploads`. No hay pipeline ni backups automatizados ni health check de imagen más allá del de Railway. Orden: migraciones → backend → frontend. Para revertir, desplegar la imagen anterior y aplicar el plan de datos correspondiente.
+11. **Despliegue.** `Dockerfile` multi-stage Node 22: `npm ci`, build, luego runtime con dependencias de producción. El `CMD` ejecuta `MIGRATE_CONFIRM=YES npm run migrate:prod && npm run start:prod` y `railway.json` fija ese mismo `startCommand`, health check en `/api/health` y reinicio en fallo. Además, `TypeOrmModule` aplica las migraciones pendientes al inicializar en cualquier entorno (`migrationsRun`), por lo que el esquema se actualiza aunque el comando de arranque del proveedor no ejecute el runner; `DB_MIGRATIONS_RUN=false` lo desactiva. En producción, si la tabla `usuarios` está vacía y `ADMIN_PASSWORD` está definido, `main.ts` ejecuta el seed inicial (admin, temas, asignaturas y grupos) antes de escuchar; si ya hay usuarios no toca la BD. `docker-compose.yml` levanta PostgreSQL 16 con healthcheck y el backend, con volúmenes `pgdata` y `uploads`. No hay pipeline ni backups automatizados ni health check de imagen más allá del de Railway. Orden: migraciones → backend → frontend. Para revertir, desplegar la imagen anterior y aplicar el plan de datos correspondiente.
 
 12. **Relación con otros repos.**
 

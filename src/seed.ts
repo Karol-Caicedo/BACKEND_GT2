@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import type { DataSource } from 'typeorm';
 import { hashPassword } from './common/password.util';
 import AppDataSource from './data-source';
 import { User } from './modules/users/user.entity';
@@ -70,10 +71,9 @@ export const ASIGNATURAS_INICIALES: { nombre: string; semestre: number }[] = [
   { nombre: 'Seminario de Nuevas Tecnologías', semestre: 9 },
 ];
 
-async function main() {
-  await AppDataSource.initialize();
-  const users = AppDataSource.getRepository(User);
-  const temas = AppDataSource.getRepository(Tema);
+export async function ejecutarSeed(ds: DataSource = AppDataSource): Promise<void> {
+  const users = ds.getRepository(User);
+  const temas = ds.getRepository(Tema);
   const produccion = esProduccion();
 
   const adminEmail = (process.env.ADMIN_EMAIL || 'admin@unipacifico.edu.co').toLowerCase();
@@ -144,8 +144,8 @@ async function main() {
     console.log('Base de datos ya inicializada: respetando temas eliminados por el administrador.');
   }
 
-  const asignaturasRepo = AppDataSource.getRepository(Asignatura);
-  const gruposRepo = AppDataSource.getRepository(GrupoAsignatura);
+  const asignaturasRepo = ds.getRepository(Asignatura);
+  const gruposRepo = ds.getRepository(GrupoAsignatura);
   const totalAsignaturas = await asignaturasRepo.count();
   if (totalAsignaturas === 0) {
     for (const item of ASIGNATURAS_INICIALES) {
@@ -208,12 +208,21 @@ async function main() {
   }
 
 
-  await AppDataSource.destroy();
-  process.exit(0);
 }
 
-main().catch((e) => {
-  // eslint-disable-next-line no-console
-  console.error(e);
-  process.exit(1);
-});
+async function main() {
+  await AppDataSource.initialize();
+  try {
+    await ejecutarSeed(AppDataSource);
+  } finally {
+    await AppDataSource.destroy();
+  }
+}
+
+if (require.main === module) {
+  main().catch((e) => {
+    // eslint-disable-next-line no-console
+    console.error(e);
+    process.exit(1);
+  });
+}
