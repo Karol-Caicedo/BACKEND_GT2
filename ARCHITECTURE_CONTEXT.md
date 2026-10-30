@@ -76,7 +76,7 @@ flowchart LR
 
 El código y los mensajes de usuario están en español. `tsconfig` usa `strictNullChecks: false`; no asumir tipado estricto. No hay lint ni formateador; no reformatear archivos ajenos.
 
-6. **Datos y contratos.** Prefijo global `/api`. Respuesta de error uniforme: `{ statusCode, error, message, correlationId }`. Swagger está en `/api/docs` (se puede desactivar con `ENABLE_SWAGGER=false`). No hay cliente generado ni versionado de contrato; los frontends escriben las URLs e interfaces manualmente.
+6. **Datos y contratos.** Prefijo global `/api`. Respuesta de error uniforme: `{ statusCode, error, message, correlationId }`. Swagger está en `/api/docs` (se puede desactivar con `ENABLE_SWAGGER=false`); `/docs`, `/api-docs` y `/api` redirigen allí, y la raíz también cuando no se sirve el frontend. No hay cliente generado ni versionado de contrato; los frontends escriben las URLs e interfaces manualmente.
 
 **Endpoints por módulo** (roles entre paréntesis; `P` = público).
 

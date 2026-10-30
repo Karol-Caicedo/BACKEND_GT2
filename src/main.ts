@@ -65,6 +65,31 @@ async function bootstrap() {
     join(process.cwd(), 'frontend', 'dist', 'app', 'browser'),
     join(process.cwd(), '..', 'frontend', 'dist', 'app', 'browser'),
   ].find((d) => existsSync(join(d, 'index.html')));
+
+  const swaggerDefault = 'true';
+  const swaggerEnabled = (config.get('ENABLE_SWAGGER', swaggerDefault) + '').toLowerCase() === 'true';
+  if (swaggerEnabled) {
+    const docConfig = new DocumentBuilder()
+      .setTitle('SIGICE API')
+      .setDescription('API del programa de Ingeniería de Sistemas (Proyección Social)')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const doc = SwaggerModule.createDocument(app, docConfig);
+    SwaggerModule.setup('api/docs', app, doc);
+
+    // Rutas cortas para encontrar la documentación; la raíz solo redirige si no hay frontend.
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      if (req.method !== 'GET') return next();
+      const ruta = req.path.replace(/\/+$/, '') || '/';
+      const esAccesoDirecto = ruta === '/docs' || ruta === '/api-docs' || ruta === '/api';
+      if (esAccesoDirecto || (!webDir && ruta === '/')) {
+        return res.redirect(302, '/api/docs');
+      }
+      next();
+    });
+  }
+
   if (webDir) {
     app.useStaticAssets(webDir, { index: false });
     app.use((req: Request, res: Response, next: NextFunction) => {
@@ -78,22 +103,9 @@ async function bootstrap() {
     console.log(`Sirviendo frontend desde ${webDir}`);
   }
 
-  const swaggerDefault = 'true';
-  const swaggerEnabled = (config.get('ENABLE_SWAGGER', swaggerDefault) + '').toLowerCase() === 'true';
-  if (swaggerEnabled) {
-    const docConfig = new DocumentBuilder()
-      .setTitle('SIGICE API')
-      .setDescription('API del programa de Ingeniería de Sistemas (Proyección Social)')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
-    const doc = SwaggerModule.createDocument(app, docConfig);
-    SwaggerModule.setup('api/docs', app, doc);
-  }
-
   const port = Number(config.get('PORT', 3000));
   await app.listen(port);
   // eslint-disable-next-line no-console
-  console.log(`Backend escuchando en http://localhost:${port}/api - docs en /api/docs`);
+  console.log(`Backend escuchando en http://localhost:${port}/api - docs en http://localhost:${port}/api/docs`);
 }
 bootstrap();
