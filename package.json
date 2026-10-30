@@ -16,6 +16,7 @@
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/data-source.ts",
     "migration:run:guarded": "ts-node src/migrate-guarded.ts",
     "migration:run:guarded:prod": "node dist/migrate-guarded.js",
+    "migrate:prod": "node dist/migrate-guarded.js",
     "test": "jest",
     "test:cov": "jest --coverage"
   },

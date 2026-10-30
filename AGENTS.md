@@ -6,6 +6,7 @@ SIGICE backend: NestJS 11 + PostgreSQL 16 + TypeORM API for the SIGICE frontend 
 
 - `npm ci`; `npm run start:dev` — Nest watch mode on `PORT` (default 3000). Requires a running Postgres and a `.env`.
 - `npm run build` then `npm run start:prod` — `tsc -p tsconfig.build.json` to `dist/`; production runs with `NODE_ENV=production`.
+- `npm run migrate:prod` — ejecuta el runner protegido ya compilado (`dist/migrate-guarded.js`). El `CMD` del `Dockerfile` y `railway.json` lo ejecutan con `MIGRATE_CONFIRM=YES` antes de `start:prod`.
 - `npm test` — Jest (rootDir `src`, `*.spec.ts`). Unit specs need no DB; `src/test/integracion.spec.ts` needs Postgres and creates/truncates `intereses_db_test`.
 - Single test: `npm test -- auth.service.spec` (Jest path pattern). Skip the DB suite: `npm test -- --testPathIgnorePatterns=integracion`.
 - Local DB: `docker compose up -d postgres` (reads `.env`; DB on `localhost:5432`). `docker compose up -d --build` runs the API too.

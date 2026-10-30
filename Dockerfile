@@ -15,4 +15,4 @@ RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 RUN mkdir -p /app/uploads
 EXPOSE 3000
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "MIGRATE_CONFIRM=YES npm run migrate:prod && npm run start:prod"]

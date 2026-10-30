@@ -131,7 +131,7 @@ Invariantes: 1–5 temas en modo selección; puntajes 1–5; máximo 4 asignatur
 
 9. **Pruebas y calidad.** Jest con `rootDir: src`, `*.spec.ts` y `ts-jest`; hay 40 specs, incluidas unitarias de auth, acceso, reglas, DTOs y servicios, más integración HTTP/DB en `src/test/`. La integración crea el esquema con `synchronize()` en `intereses_db_test` y trunca datos; `TEST_DB_NAME` debe terminar en `_test`. No hay lint, formato, cobertura obligatoria ni CI. El 2026-10-28 se ejecutaron build y pruebas: **build OK**; unitarias **333/345** (12 fallos, 6 suites rojas); integración real **22/24** (2 fallos). Fallos deterministas: `railway.json`/`migrate:prod` ausentes, specs que leen `karol1/frontend/src` inexistente, constructor de asignaturas desactualizado, expectativas de `grupos` y `semestreAlResponder` desalineadas. Cobertura no generó resumen por suites rojas. Detalle en [`TEST_REPORT.md`](../TEST_REPORT.md).
 
-10. **Comandos y entorno.** La fuente de verdad es [`AGENTS.md`](./AGENTS.md) → `Commands`. Resumen: `npm ci`; `npm run start:dev`; `npm run build` + `npm run start:prod`; `npm test`; `docker compose up -d postgres`; `npm run seed`; migraciones con `migration:generate`, `migration:run` y en producción `migration:run:guarded` + `MIGRATE_CONFIRM=YES`.
+10. **Comandos y entorno.** La fuente de verdad es [`AGENTS.md`](./AGENTS.md) → `Commands`. Resumen: `npm ci`; `npm run start:dev`; `npm run build` + `npm run start:prod`; `npm test`; `docker compose up -d postgres`; `npm run seed`; migraciones con `migration:generate`, `migration:run` y en producción `migration:run:guarded`/`migrate:prod` + `MIGRATE_CONFIRM=YES` (el arranque del contenedor y `railway.json` ya lo aplican).
 
 | Grupo | Variables (sin valores) |
 |---|---|
@@ -144,7 +144,7 @@ Invariantes: 1–5 temas en modo selección; puntajes 1–5; máximo 4 asignatur
 
 El arranque falla si `JWT_SECRET` mide menos de 32 caracteres o es un valor de ejemplo, o si las claves de login no son RSA PKCS#8 de al menos 3072 bits. `ConfigModule` busca `../.env` y luego `.env`; no hay `.env.example`. No se documentan ni copian valores reales.
 
-11. **Despliegue.** `Dockerfile` multi-stage Node 22: `npm ci`, build, luego runtime con dependencias de producción y `node dist/main`. `docker-compose.yml` levanta PostgreSQL 16 con healthcheck y el backend, con volúmenes `pgdata` y `uploads`. En producción `migrationsRun` está desactivado; el runner protegido exige `MIGRATE_CONFIRM=YES`. No hay `railway.json`, pipeline, health check de imagen ni backups automatizados en este repo; los tests de política de migraciones/seed fallan por ese archivo ausente y por el script `migrate:prod`. Railway y la ejecución real quedan **No verificado**. Orden: migraciones → backend → frontend. Para revertir, desplegar la imagen anterior y aplicar el plan de datos correspondiente.
+11. **Despliegue.** `Dockerfile` multi-stage Node 22: `npm ci`, build, luego runtime con dependencias de producción. El `CMD` ejecuta `MIGRATE_CONFIRM=YES npm run migrate:prod && npm run start:prod`, de modo que las migraciones pendientes se aplican antes de iniciar Nest. `railway.json` fija ese mismo `startCommand`, health check en `/api/health` y reinicio en fallo. `docker-compose.yml` levanta PostgreSQL 16 con healthcheck y el backend, con volúmenes `pgdata` y `uploads`. En producción `migrationsRun` sigue desactivado; el runner protegido exige `MIGRATE_CONFIRM=YES`, que aporta el comando de arranque versionado. No hay pipeline ni backups automatizados ni health check de imagen más allá del de Railway. Orden: migraciones → backend → frontend. Para revertir, desplegar la imagen anterior y aplicar el plan de datos correspondiente.
 
 12. **Relación con otros repos.**
 
@@ -161,10 +161,10 @@ Cambios que exigen coordinación: DTOs/rutas, envelope de login (`version:1`, RS
 
 | Severidad | Hallazgo | Evidencia | Impacto | Acción recomendada |
 |---|---|---|---|---|
-| Alta | Specs de migración/seed fallan porque `railway.json` y `migrate:prod` no existen en esta copia | `src/config/migration-policy.spec.ts`, `src/seed-policy.spec.ts`, `package.json`, `TEST_REPORT.md` | Suite roja y despliegue no reproducible | Alinear specs/scripts o añadir configuración versionada con aprobación |
+| Media | Parte de los specs siguen desalineados con el layout plano del repo (rutas `frontend/`, constructor de asignaturas, `grupos` y `semestreAlResponder`) | `TEST_REPORT.md` | Suite roja parcial | Corregir specs obsoletos por separado |
 | Alta | Sin CI, lint ni formato; solo build/Jest manuales | raíz | Regresiones y estilo inconsistentes | Añadir pipeline y lint tras aprobar stack |
 | Alta | Uploads en disco local sin política de respaldo/volumen documentada | `uploads/`, `Dockerfile` | Pérdida de imágenes al recrear el contenedor | Volumen persistente, backup y verificación de restauración |
-| Alta | Migraciones productivas dependen de un runner externo no versionado; sin plan de rollback documentado | `migrate-guarded.ts`, `railway.json` ausente | Despliegue/rollback frágil | Versionar configuración y documentar rollback y backup |
+| Media | El rollback de migraciones y los backups no están automatizados ni documentados | `migrate-guarded.ts`, `railway.json` | Recuperación manual ante un cambio fallido | Documentar rollback y backup/restauración verificada |
 | Media | `strictNullChecks: false` y specs excluidos del build | `tsconfig.json` | Errores de nulabilidad no detectados | Evaluar migración gradual con pruebas |
 | Media | Docker corre como root y no declara `HEALTHCHECK` | `Dockerfile` | Mayor superficie y salud no verificable por contenedor | Usuario no root y health check |
 | Media | Swagger habilitado por defecto, incluso en producción | `src/main.ts` | Expone superficie de API | Desactivar por entorno si no se requiere |
